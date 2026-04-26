@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Copilot</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+/* =========================================================
+   DESIGN TOKENS
+   ========================================================= */
+:root {
+  /* Surfaces (warm cream palette) */
+  --bg: oklch(97% 0.008 85);
+  --surface: oklch(99.5% 0.004 85);
+  --surface-2: oklch(95% 0.010 80);
+  --surface-dark: oklch(22% 0.020 60);
+
+  /* Ink */
+  --ink: oklch(20% 0.015 60);
+  --ink-soft: oklch(48% 0.012 70);
+  --ink-faint: oklch(70% 0.008 70);
+  --ink-on-dark: oklch(96% 0.008 85);
+
+  /* Borders */
+  --border: oklch(90% 0.008 75);
+  --border-strong: oklch(82% 0.012 75);
+
+  /* Accent — deep forest */
+  --accent: oklch(40% 0.10 160);
+  --accent-soft: oklch(94% 0.030 160);
+  --accent-ink: oklch(30% 0.09 160);
+
+  /* Status */
+  --urgent: oklch(50% 0.18 25);
+  --urgent-soft: oklch(94% 0.040 25);
+  --warning: oklch(58% 0.15 65);
+  --warning-soft: oklch(95% 0.040 65);
+  --calm: oklch(48% 0.06 200);
+  --calm-soft: oklch(95% 0.020 200);
+
+  /* Type */
+  --font-display: 'Bricolage Grotesque', ui-serif, serif;
+  --font-body: 'General Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Space */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  /* Shadow */
+  --shadow-1: 0 1px 2px rgba(20, 15, 5, 0.04);
+  --shadow-2: 0 2px 6px rgba(20, 15, 5, 0.05), 0 1px 2px rgba(20, 15, 5, 0.04);
+  --shadow-3: 0 8px 24px rgba(20, 15, 5, 0.07), 0 2px 4px rgba(20, 15, 5, 0.04);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font: inherit; color: inherit; }
+ul { list-style: none; }
+a { color: inherit; }
+
+/* =========================================================
+   APP SHELL
+   ========================================================= */
+.app {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: var(--s-8) var(--s-6);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-6);
+  padding-bottom: var(--s-6);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s-6);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.brand-mark {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--ink-on-dark);
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.brand h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 3vw, 36px);
+  font-variation-settings: "opsz" 32;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.brand .subtitle {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.header-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.header-meta .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.header-meta .date {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  font-variation-settings: "opsz" 18;
+  color: var(--ink);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-bottom: var(--s-6);
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  width: fit-content;
+}
+.tab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink-soft);
+  transition: all 0.15s ease-out;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.tab .count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  padding: 2px 6px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
+}
+.tab:hover { color: var(--ink); }
+.tab.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+.tab.active .count {
+  background: var(--accent);
+  color: var(--ink-on-dark);
+}
+
+/* Tab panes */
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: fadein 0.2s ease-out; }
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* =========================================================
+   CARDS / BENTO
+   ========================================================= */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--s-5);
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  position: relative;
+}
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  font-variation-settings: "opsz" 16;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.card-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--s-1);
+}
+
+/* Stat cards */
+.stat {
+  grid-column: span 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(40px, 4vw, 56px);
+  font-variation-settings: "opsz" 48;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: var(--ink);
+  font-feature-settings: 'tnum';
+}
+.stat-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.stat-trend {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: var(--s-1);
+}
+.stat.urgent .stat-value { color: var(--urgent); }
+.stat.warning .stat-value { color: var(--warning); }
+.stat.calm .stat-value { color: var(--calm); }
+
+/* Featured card (dark, like the time tracker in the inspo) */
+.card-dark {
+  background: var(--surface-dark);
+  color: var(--ink-on-dark);
+  border-color: transparent;
+}
+.card-dark .card-title { color: var(--ink-on-dark); }
+.card-dark .card-eyebrow { color: oklch(70% 0.012 70); }
+
+/* =========================================================
+   BRIEFING TAB
+   ========================================================= */
+.briefing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-5);
+}
+.briefing-input {
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  min-height: 120px;
+}
+.briefing-input.has-content { border-style: solid; border-color: var(--border); }
+.briefing-input textarea {
+  width: 100%;
+  min-height: 80px;
+  border: none;
+  background: transparent;
+  resize: vertical;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  outline: none;
+}
+.briefing-input textarea::placeholder { color: var(--ink-faint); }
+
+.briefing-input-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--border);
+}
+.briefing-input-toolbar .hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.briefing-render {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s-12) clamp(var(--s-6), 5vw, var(--s-16));
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.65;
+  max-width: none;
+}
+.briefing-render h1, .briefing-render h2, .briefing-render h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.briefing-render h1 {
+  font-size: clamp(28px, 3vw, 38px);
+  font-variation-settings: "opsz" 36;
+  margin-bottom: var(--s-5);
+  padding-bottom: var(--s-4);
+  border-bottom: 2px solid var(--ink);
+}
+.briefing-render h2 {
+  font-size: 22px;
+  font-variation-settings: "opsz" 22;
+  margin-top: var(--s-8);
+  margin-bottom: var(--s-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.briefing-render h2:first-child { margin-top: 0; }
+.briefing-render h3 {
+  font-size: 16px;
+  font-variation-settings: "opsz" 16;
+  margin-top: var(--s-5);
+  margin-bottom: var(--s-2);
+}
+.briefing-render p { margin-bottom: var(--s-3); max-width: 70ch; }
+.briefing-render ul, .briefing-render ol {
+  margin: 0 0 var(--s-4) var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.briefing-render li { max-width: 70ch; }
+.briefing-render li::marker { color: var(--ink-faint); }
+.briefing-render strong { font-weight: 600; }
+.briefing-render em { font-style: italic; }
+.briefing-render code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--surface-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.briefing-render blockquote {
+  margin: var(--s-4) 0;
+  padding: var(--s-3) var(--s-5);
+  background: var(--accent-soft);
+  border-radius: var(--r-md);
+  color: var(--accent-ink);
+  font-style: italic;
+}
+
+.briefing-empty {
+  text-align: center;
+  padding: var(--s-12) var(--s-6);
+  color: var(--ink-faint);
+}
+.briefing-empty .icon {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 300;
+  color: var(--border-strong);
+  margin-bottom: var(--s-3);
+}
+
+/* =========================================================
+   EVENTS TAB
+   ========================================================= */
+.events-section {
+  margin-top: var(--s-6);
+}
+.events-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.events-section-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  font-variation-settings: "opsz" 20;
+  letter-spacing: -0.01em;
+}
+.events-section-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.event-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.event-item {
+  display: grid;
+  grid-template-columns: 90px 1fr auto auto;
+  gap: var(--s-4);
+  align-items: center;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.event-item:last-child { border-bottom: none; }
+.event-item:hover { background: var(--surface-2); }
+
+.event-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.event-date .day {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variation-settings: "opsz" 24;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ink);
+  font-feature-settings: 'tnum';
+}
+.event-date .my {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+.event-body { min-width: 0; }
+.event-category {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.event-category::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--ink-faint));
+}
+.event-title {
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink);
+  margin-top: 2px;
+}
+.event-amount {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+  font-feature-settings: 'tnum';
+}
+.event-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.event-tag.urgent { background: var(--urgent-soft); color: var(--urgent); }
+.event-tag.warning { background: var(--warning-soft); color: var(--warning); }
+.event-tag.calm { background: var(--calm-soft); color: var(--calm); }
+.event-tag.normal { background: var(--surface-2); color: var(--ink-soft); }
+
+.event-actions {
+  display: flex;
+  gap: var(--s-1);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.event-item:hover .event-actions { opacity: 1; }
+.icon-btn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-faint);
+  font-size: 14px;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+
+/* Featured upcoming card */
+.upcoming-feature {
+  grid-column: span 6;
+  background: var(--surface-dark);
+  color: var(--ink-on-dark);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.upcoming-feature .upcoming-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: oklch(75% 0.020 65);
+}
+.upcoming-feature .upcoming-event-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-variation-settings: "opsz" 32;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink-on-dark);
+}
+.upcoming-feature .upcoming-meta {
+  display: flex;
+  gap: var(--s-5);
+  align-items: baseline;
+  margin-top: var(--s-2);
+}
+.upcoming-feature .upcoming-meta .countdown {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-variation-settings: "opsz" 24;
+  font-weight: 600;
+  color: var(--accent);
+}
+.upcoming-feature .upcoming-meta .when {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: oklch(75% 0.020 65);
+  letter-spacing: 0.04em;
+}
+
+/* Form */
+.event-form {
+  grid-column: span 6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+.form-row.single { grid-template-columns: 1fr; }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.field label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.field input, .field select, .field textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+}
+
+/* =========================================================
+   MAINTENANCE TAB
+   ========================================================= */
+.maint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s-5);
+}
+.maint-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  position: relative;
+}
+.maint-card.due {
+  background: var(--urgent-soft);
+  border-color: oklch(85% 0.06 25);
+}
+.maint-card.soon {
+  background: var(--warning-soft);
+  border-color: oklch(85% 0.05 65);
+}
+.maint-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+.maint-card .item-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  font-variation-settings: "opsz" 18;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.maint-card .scope {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--s-1);
+}
+.maint-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+.maint-card.due .maint-status { background: var(--urgent); color: var(--ink-on-dark); }
+.maint-card.soon .maint-status { background: var(--warning); color: var(--ink-on-dark); }
+
+.maint-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.maint-stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 2px;
+}
+.maint-stat-value {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 17px;
+  font-variation-settings: "opsz" 17;
+  color: var(--ink);
+  font-feature-settings: 'tnum';
+}
+.maint-cadence {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+}
+.maint-actions { margin-top: var(--s-2); }
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--ink-on-dark);
+}
+.btn-primary:hover { background: var(--accent-ink); }
+.btn-secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-ghost {
+  color: var(--ink-soft);
+}
+.btn-ghost:hover { color: var(--ink); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-block { width: 100%; justify-content: center; }
+
+.fab {
+  position: fixed;
+  bottom: var(--s-8);
+  right: var(--s-8);
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--ink-on-dark);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-3);
+  z-index: 50;
+}
+.fab:hover { background: var(--accent-ink); }
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 15, 5, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--s-4);
+}
+.modal-backdrop.open { display: flex; animation: fadein 0.2s; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--s-8);
+  max-width: 520px;
+  width: 100%;
+  box-shadow: var(--shadow-3);
+}
+.modal h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--s-5);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 900px) {
+  .stat { grid-column: span 6; }
+  .upcoming-feature, .event-form { grid-column: span 12; }
+  .event-item { grid-template-columns: 70px 1fr auto; }
+  .event-item .event-amount { display: none; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .header-meta { text-align: left; }
+}
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+@media print {
+  @page { size: A4; margin: 18mm 16mm; }
+  body, html { background: white; }
+  .tabs, .fab, .header-meta, .briefing-input,
+  .event-actions, .event-form, .events-section-header .btn,
+  .maint-actions, .footer-actions { display: none !important; }
+  .app { padding: 0; max-width: none; }
+  .header { border-color: black; padding-bottom: 12mm; margin-bottom: 8mm; }
+  .brand h1 { font-size: 28px; }
+  .tab-pane { display: block !important; }
+  .tab-pane:not(.print-target) { display: none !important; }
+  .briefing-render {
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    background: white;
+  }
+  .briefing-render h1 { border-bottom-color: black; }
+  .card, .event-list, .maint-card {
+    box-shadow: none;
+    page-break-inside: avoid;
+    border-color: oklch(85% 0 0);
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div>
+        <h1>Life Copilot</h1>
+        <p class="subtitle">Tu vida bajo control, sin esfuerzo.</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="label">Hoy</span>
+      <span class="date" id="today-date">—</span>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="briefing">Briefing</button>
+    <button class="tab" data-tab="eventos">Eventos <span class="count" id="count-events">0</span></button>
+    <button class="tab" data-tab="mantenimientos">Mantenimientos <span class="count" id="count-maint">0</span></button>
+  </nav>
+
+  <main>
+
+    <!-- BRIEFING TAB -->
+    <section class="tab-pane active" id="pane-briefing">
+      <div class="briefing-grid">
+        <div class="briefing-input" id="briefing-input">
+          <textarea id="briefing-text" placeholder="Pega aquí el briefing semanal de Claude (markdown)…"></textarea>
+          <div class="briefing-input-toolbar">
+            <span class="hint" id="briefing-status">Esperando contenido</span>
+            <div style="display:flex; gap: 8px;">
+              <button class="btn btn-ghost btn-sm" id="briefing-clear">Limpiar</button>
+              <button class="btn btn-primary btn-sm" id="briefing-print">Imprimir / PDF</button>
+            </div>
+          </div>
+        </div>
+        <article class="briefing-render print-target" id="briefing-render">
+          <div class="briefing-empty">
+            <div class="icon">¶</div>
+            <p>Aquí se renderizará tu briefing.<br>Pídeselo a Claude, copia su respuesta, y pégala arriba.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- EVENTOS TAB -->
+    <section class="tab-pane" id="pane-eventos">
+      <div class="bento" style="margin-bottom: var(--s-6);">
+
+        <div class="card stat urgent">
+          <div>
+            <div class="card-eyebrow">Urgente</div>
+            <div class="stat-label">Próximos 30 días</div>
+          </div>
+          <div class="stat-value" id="stat-urgent">0</div>
+          <div class="stat-trend" id="stat-urgent-detail">—</div>
+        </div>
+
+        <div class="card stat warning">
+          <div>
+            <div class="card-eyebrow">Próximo</div>
+            <div class="stat-label">30 a 90 días</div>
+          </div>
+          <div class="stat-value" id="stat-warning">0</div>
+          <div class="stat-trend" id="stat-warning-detail">—</div>
+        </div>
+
+        <div class="card stat calm">
+          <div>
+            <div class="card-eyebrow">Horizonte</div>
+            <div class="stat-label">Más de 90 días</div>
+          </div>
+          <div class="stat-value" id="stat-calm">0</div>
+          <div class="stat-trend" id="stat-calm-detail">—</div>
+        </div>
+
+        <div class="card stat">
+          <div>
+            <div class="card-eyebrow">Total</div>
+            <div class="stat-label">Eventos en seguimiento</div>
+          </div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-trend" id="stat-total-detail">—</div>
+        </div>
+
+        <div class="upcoming-feature" id="feature-upcoming">
+          <span class="upcoming-eyebrow">Lo más cercano</span>
+          <div class="upcoming-event-title" id="feature-title">—</div>
+          <div class="upcoming-meta">
+            <div>
+              <div class="countdown" id="feature-countdown">—</div>
+              <div class="when" id="feature-when">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="event-form">
+          <div class="card-eyebrow" style="margin-bottom: var(--s-3);">Añadir evento</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Fecha</label>
+              <input type="date" id="ev-date">
+            </div>
+            <div class="field">
+              <label>Categoría</label>
+              <select id="ev-category">
+                <option>ITV</option>
+                <option>SEGURO COCHE</option>
+                <option>SEGURO HOGAR</option>
+                <option>SALUD</option>
+                <option>DOCUMENTO</option>
+                <option>SUSCRIPCIÓN</option>
+                <option>MANTENIMIENTO</option>
+                <option>IMPUESTO</option>
+                <option>OTRO</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="field">
+              <label>Descripción</label>
+              <input type="text" id="ev-title" placeholder="ej: ITV BMW Serie 5">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Importe (opcional)</label>
+              <input type="number" step="0.01" id="ev-amount" placeholder="—">
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary btn-block" id="ev-add">Añadir</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="events-section">
+        <div class="events-section-header">
+          <h2 class="events-section-title">Calendario</h2>
+          <span class="events-section-meta" id="events-count">— eventos</span>
+        </div>
+        <div class="event-list" id="event-list"></div>
+      </div>
+    </section>
+
+    <!-- MANTENIMIENTOS TAB -->
+    <section class="tab-pane" id="pane-mantenimientos">
+      <div class="events-section-header" style="margin-bottom: var(--s-5);">
+        <h2 class="events-section-title">Mantenimientos recurrentes</h2>
+        <button class="btn btn-secondary btn-sm" id="maint-add">+ Nuevo mantenimiento</button>
+      </div>
+      <div class="maint-grid" id="maint-grid"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer-actions" style="margin-top: var(--s-12); padding-top: var(--s-5); border-top: 1px solid var(--border); display: flex; gap: var(--s-3); justify-content: space-between; align-items: center;">
+    <span style="font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em;">v0.1 · datos en localStorage · respaldo recomendado en Filen</span>
+    <div style="display: flex; gap: var(--s-2);">
+      <button class="btn btn-ghost btn-sm" id="export-json">Exportar JSON</button>
+      <button class="btn btn-ghost btn-sm" id="export-md">Exportar events.md</button>
+      <button class="btn btn-ghost btn-sm" id="import-json">Importar JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none;">
+    </div>
+  </footer>
+
+</div>
+
+<!-- Add Maintenance Modal -->
+<div class="modal-backdrop" id="modal-maint">
+  <div class="modal">
+    <h2>Nuevo mantenimiento</h2>
+    <div class="form-row single">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="m-name" placeholder="ej: Cambio aceite BMW">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Última vez (fecha)</label>
+        <input type="date" id="m-last-date">
+      </div>
+      <div class="field">
+        <label>O bien (km)</label>
+        <input type="number" id="m-last-km" placeholder="—">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Cadencia (cada)</label>
+        <input type="number" id="m-cadence" placeholder="6">
+      </div>
+      <div class="field">
+        <label>Unidad</label>
+        <select id="m-unit">
+          <option value="months">meses</option>
+          <option value="days">días</option>
+          <option value="km">km</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="m-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   STATE
+   ========================================================= */
+const STORAGE_KEY = 'life_copilot_v1';
+
+const SEED = {
+  events: [
+    { id: 1, date: '2026-05-20', category: 'SUSCRIPCIÓN', title: 'Spotify Premium Individual' },
+    { id: 2, date: '2026-06-24', category: 'MANTENIMIENTO', title: 'BMW: aspirar interior' },
+    { id: 3, date: '2026-07-12', category: 'SUSCRIPCIÓN', title: 'Real Debrid' },
+    { id: 4, date: '2026-08-06', category: 'SEGURO COCHE', title: 'BYD Dolphin Surf — Todo Riesgo Plus Eco' },
+    { id: 5, date: '2026-10-08', category: 'SALUD', title: 'Limpieza dental Gerardo' },
+    { id: 6, date: '2026-10-28', category: 'SEGURO HOGAR', title: 'Sant Pere de Ribes — Mapfre', amount: 399.09 },
+    { id: 7, date: '2026-11-29', category: 'ITV', title: 'BMW Serie 5 (2007)' },
+    { id: 8, date: '2027-01-14', category: 'SEGURO HOGAR', title: 'Tres Cantos — AVD', amount: 242.98 },
+    { id: 9, date: '2027-01-17', category: 'SEGURO COCHE', title: 'BMW Serie 5 — Mutua Madrileña' },
+    { id: 10, date: '2027-03-26', category: 'DOCUMENTO', title: 'DNI Nil' },
+    { id: 11, date: '2027-03-26', category: 'DOCUMENTO', title: 'DNI Catalina' },
+    { id: 12, date: '2030-09-22', category: 'DOCUMENTO', title: 'DNI Gerardo' },
+    { id: 13, date: '2035-04-04', category: 'DOCUMENTO', title: 'DNI Ana' }
+  ],
+  maintenance: [
+    { id: 1, name: 'BMW — aspirar interior', lastDate: '2026-04-24', cadence: 2, unit: 'months' },
+    { id: 2, name: 'Limpieza dental Gerardo', lastDate: '2026-04-08', cadence: 6, unit: 'months' },
+    { id: 3, name: 'BMW — cambio aceite + filtro', lastKm: 325000, cadence: 15000, unit: 'km' },
+    { id: 4, name: 'BMW — pastillas freno', lastKm: 325000, cadence: 30000, unit: 'km' }
+  ],
+  briefing: ''
+};
+
+const CATEGORY_COLORS = {
+  'ITV': 'oklch(50% 0.18 25)',
+  'SEGURO COCHE': 'oklch(45% 0.16 35)',
+  'SEGURO HOGAR': 'oklch(50% 0.14 50)',
+  'SALUD': 'oklch(48% 0.06 200)',
+  'DOCUMENTO': 'oklch(40% 0.10 280)',
+  'SUSCRIPCIÓN': 'oklch(45% 0.12 320)',
+  'MANTENIMIENTO': 'oklch(40% 0.10 160)',
+  'IMPUESTO': 'oklch(38% 0.04 60)',
+  'OTRO': 'oklch(55% 0.01 70)'
+};
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(SEED));
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const WEEKDAYS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+// Parse YYYY-MM-DD as local time (avoids UTC-midnight timezone shift)
+function _parseLocal(d) {
+  if (d instanceof Date) return d;
+  const [y, m, day] = d.split('-').map(Number);
+  return new Date(y, m - 1, day);
+}
+
+function fmtDateLong(d) {
+  const date = _parseLocal(d);
+  return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
+function fmtDay(d) { return String(_parseLocal(d).getDate()).padStart(2,'0'); }
+function fmtMonthYear(d) {
+  const date = _parseLocal(d);
+  return `${MONTHS[date.getMonth()]} ${String(date.getFullYear()).slice(2)}`;
+}
+function daysUntil(d) {
+  const target = _parseLocal(d);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
+}
+function urgencyTag(category, days) {
+  // Per-category urgency thresholds (matches system_prompt.md)
+  const thresholds = {
+    'SEGURO COCHE': [45, 15],
+    'SEGURO HOGAR': [45, 15],
+    'ITV': [60, 30],
+    'DOCUMENTO': [90, 30],
+    'SUSCRIPCIÓN': [30, 7],
+    'SALUD': [30, 7],
+    'MANTENIMIENTO': [30, 7],
+    'IMPUESTO': [60, 15],
+    'OTRO': [60, 30]
+  };
+  const [warn, urg] = thresholds[category] || [60, 30];
+  if (days <= 0) return { kind: 'urgent', label: 'Vencido' };
+  if (days <= urg) return { kind: 'urgent', label: `${days}d` };
+  if (days <= warn) return { kind: 'warning', label: `${days}d` };
+  if (days <= 90) return { kind: 'calm', label: `${days}d` };
+  return { kind: 'normal', label: `${days}d` };
+}
+function fmtCurrency(n) {
+  if (n == null) return '';
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(n);
+}
+
+/* =========================================================
+   RENDER: HEADER
+   ========================================================= */
+function renderHeader() {
+  document.getElementById('today-date').textContent = fmtDateLong(new Date());
+}
+
+/* =========================================================
+   RENDER: TABS COUNTS
+   ========================================================= */
+function renderCounts() {
+  document.getElementById('count-events').textContent = state.events.length;
+  document.getElementById('count-maint').textContent = state.maintenance.length;
+}
+
+/* =========================================================
+   RENDER: EVENTS
+   ========================================================= */
+function renderEvents() {
+  const list = document.getElementById('event-list');
+  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Stats
+  let urgentCount = 0, warningCount = 0, calmCount = 0;
+  let nextUrgent = null, nextWarning = null, nextCalm = null;
+  sorted.forEach(ev => {
+    const d = daysUntil(ev.date);
+    if (d < 0) return;
+    if (d <= 30) { urgentCount++; nextUrgent = nextUrgent || ev; }
+    else if (d <= 90) { warningCount++; nextWarning = nextWarning || ev; }
+    else { calmCount++; nextCalm = nextCalm || ev; }
+  });
+  document.getElementById('stat-urgent').textContent = urgentCount;
+  document.getElementById('stat-warning').textContent = warningCount;
+  document.getElementById('stat-calm').textContent = calmCount;
+  document.getElementById('stat-total').textContent = sorted.length;
+  document.getElementById('stat-urgent-detail').textContent = nextUrgent ? `→ ${nextUrgent.title}` : 'Nada urgente';
+  document.getElementById('stat-warning-detail').textContent = nextWarning ? `→ ${nextWarning.title}` : '—';
+  document.getElementById('stat-calm-detail').textContent = nextCalm ? `→ ${nextCalm.title}` : '—';
+  document.getElementById('stat-total-detail').textContent = `Próximo: ${sorted[0]?.title || '—'}`;
+
+  // Featured
+  const upcoming = sorted.find(ev => daysUntil(ev.date) >= 0);
+  if (upcoming) {
+    const d = daysUntil(upcoming.date);
+    document.getElementById('feature-title').textContent = upcoming.title;
+    document.getElementById('feature-countdown').textContent = d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : `En ${d} días`;
+    document.getElementById('feature-when').textContent = `${fmtDateLong(upcoming.date)} · ${upcoming.category}`;
+  } else {
+    document.getElementById('feature-title').textContent = 'Nada en el horizonte';
+    document.getElementById('feature-countdown').textContent = '—';
+    document.getElementById('feature-when').textContent = '';
+  }
+
+  // List
+  list.innerHTML = '';
+  document.getElementById('events-count').textContent = `${sorted.length} eventos`;
+  sorted.forEach(ev => {
+    const days = daysUntil(ev.date);
+    const tag = urgencyTag(ev.category, days);
+    const color = CATEGORY_COLORS[ev.category] || CATEGORY_COLORS['OTRO'];
+    const row = document.createElement('div');
+    row.className = 'event-item';
+    row.innerHTML = `
+      <div class="event-date">
+        <div class="day">${fmtDay(ev.date)}</div>
+        <div class="my">${fmtMonthYear(ev.date)}</div>
+      </div>
+      <div class="event-body">
+        <span class="event-category" style="--cat-color: ${color};">${ev.category}</span>
+        <div class="event-title">${ev.title}</div>
+      </div>
+      <div class="event-amount">${fmtCurrency(ev.amount)}</div>
+      <div style="display:flex; gap:var(--s-3); align-items:center;">
+        <span class="event-tag ${tag.kind}">${tag.label}</span>
+        <div class="event-actions">
+          <button class="icon-btn" data-act="del" data-id="${ev.id}" title="Eliminar">×</button>
+        </div>
+      </div>`;
+    list.appendChild(row);
+  });
+
+  list.onclick = (e) => {
+    const btn = e.target.closest('[data-act="del"]');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    if (confirm('¿Eliminar este evento?')) {
+      state.events = state.events.filter(ev => ev.id !== id);
+      saveState(); renderAll();
+    }
+  };
+}
+
+/* =========================================================
+   RENDER: MAINTENANCE
+   ========================================================= */
+function renderMaintenance() {
+  const grid = document.getElementById('maint-grid');
+  grid.innerHTML = '';
+  state.maintenance.forEach(m => {
+    let nextLabel, statusKind = 'ok', statusLabel = 'Al día';
+    let lastLabel, cadenceLabel;
+
+    if (m.unit === 'km') {
+      const next = (m.lastKm || 0) + m.cadence;
+      lastLabel = `${m.lastKm.toLocaleString('es-ES')} km`;
+      nextLabel = `${next.toLocaleString('es-ES')} km`;
+      cadenceLabel = `Cada ${m.cadence.toLocaleString('es-ES')} km`;
+    } else {
+      const last = _parseLocal(m.lastDate);
+      const next = _parseLocal(m.lastDate);
+      if (m.unit === 'months') next.setMonth(next.getMonth() + m.cadence);
+      else if (m.unit === 'days') next.setDate(next.getDate() + m.cadence);
+      lastLabel = fmtDateLong(m.lastDate).split(' ').slice(1).join(' ');
+      const nextISO = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
+      nextLabel = fmtDateLong(nextISO).split(' ').slice(1).join(' ');
+      const days = daysUntil(nextISO);
+      if (days < 0) { statusKind = 'due'; statusLabel = 'Toca ya'; }
+      else if (days <= 30) { statusKind = 'soon'; statusLabel = `En ${days}d`; }
+      else statusLabel = `En ${days}d`;
+      cadenceLabel = `Cada ${m.cadence} ${m.unit === 'months' ? (m.cadence === 1 ? 'mes' : 'meses') : 'días'}`;
+    }
+
+    const card = document.createElement('div');
+    card.className = `maint-card ${statusKind === 'due' ? 'due' : statusKind === 'soon' ? 'soon' : ''}`;
+    card.innerHTML = `
+      <div class="maint-card-header">
+        <div>
+          <div class="scope">${m.unit === 'km' ? 'Por kilómetros' : 'Por tiempo'}</div>
+          <div class="item-name">${m.name}</div>
+        </div>
+        <span class="maint-status">${statusLabel}</span>
+      </div>
+      <div class="maint-stats">
+        <div>
+          <div class="maint-stat-label">Última vez</div>
+          <div class="maint-stat-value">${lastLabel}</div>
+        </div>
+        <div>
+          <div class="maint-stat-label">Próxima</div>
+          <div class="maint-stat-value">${nextLabel}</div>
+        </div>
+      </div>
+      <div class="maint-cadence">${cadenceLabel}</div>
+      <div class="maint-actions" style="display:flex; gap: var(--s-2);">
+        <button class="btn btn-secondary btn-sm" data-act="log" data-id="${m.id}">Registrar hoy</button>
+        <button class="btn btn-ghost btn-sm" data-act="del" data-id="${m.id}">Eliminar</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  grid.onclick = (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    const m = state.maintenance.find(x => x.id === id);
+    if (!m) return;
+    if (btn.dataset.act === 'log') {
+      if (m.unit === 'km') {
+        const km = prompt(`¿Km actuales del vehículo para "${m.name}"?`, m.lastKm || '');
+        if (!km) return;
+        m.lastKm = Number(km);
+      } else {
+        m.lastDate = new Date().toISOString().slice(0, 10);
+      }
+      saveState(); renderAll();
+    } else if (btn.dataset.act === 'del') {
+      if (confirm(`¿Eliminar "${m.name}"?`)) {
+        state.maintenance = state.maintenance.filter(x => x.id !== id);
+        saveState(); renderAll();
+      }
+    }
+  };
+}
+
+/* =========================================================
+   RENDER: BRIEFING
+   ========================================================= */
+function renderBriefing() {
+  const text = state.briefing || '';
+  const ta = document.getElementById('briefing-text');
+  const wrap = document.getElementById('briefing-input');
+  const out = document.getElementById('briefing-render');
+  const status = document.getElementById('briefing-status');
+
+  if (ta.value !== text) ta.value = text;
+
+  if (!text.trim()) {
+    out.innerHTML = `
+      <div class="briefing-empty">
+        <div class="icon">¶</div>
+        <p>Aquí se renderizará tu briefing.<br>Pídeselo a Claude, copia su respuesta, y pégala arriba.</p>
+      </div>`;
+    wrap.classList.remove('has-content');
+    status.textContent = 'Esperando contenido';
+  } else {
+    out.innerHTML = marked.parse(text);
+    wrap.classList.add('has-content');
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    status.textContent = `${wordCount} palabras · actualizado ${fmtDateLong(new Date())}`;
+  }
+}
+
+/* =========================================================
+   RENDER ALL
+   ========================================================= */
+function renderAll() {
+  renderHeader();
+  renderCounts();
+  renderEvents();
+  renderMaintenance();
+  renderBriefing();
+}
+
+/* =========================================================
+   EVENT WIRING
+   ========================================================= */
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('pane-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// Briefing input
+const briefingTa = document.getElementById('briefing-text');
+briefingTa.addEventListener('input', () => {
+  state.briefing = briefingTa.value;
+  saveState();
+  renderBriefing();
+});
+document.getElementById('briefing-clear').addEventListener('click', () => {
+  if (!confirm('¿Limpiar el briefing?')) return;
+  state.briefing = '';
+  saveState();
+  renderBriefing();
+});
+document.getElementById('briefing-print').addEventListener('click', () => {
+  document.getElementById('pane-briefing').classList.add('print-target');
+  window.print();
+  setTimeout(() => document.getElementById('pane-briefing').classList.remove('print-target'), 500);
+});
+
+// Add event
+document.getElementById('ev-add').addEventListener('click', () => {
+  const date = document.getElementById('ev-date').value;
+  const category = document.getElementById('ev-category').value;
+  const title = document.getElementById('ev-title').value.trim();
+  const amount = document.getElementById('ev-amount').value;
+  if (!date || !title) { alert('Fecha y descripción son obligatorias.'); return; }
+  state.events.push({
+    id: Date.now(),
+    date, category, title,
+    amount: amount ? Number(amount) : undefined
+  });
+  saveState();
+  document.getElementById('ev-date').value = '';
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-amount').value = '';
+  renderAll();
+});
+
+// Maintenance modal
+const modalMaint = document.getElementById('modal-maint');
+document.getElementById('maint-add').addEventListener('click', () => modalMaint.classList.add('open'));
+document.getElementById('m-cancel').addEventListener('click', () => modalMaint.classList.remove('open'));
+document.getElementById('m-save').addEventListener('click', () => {
+  const name = document.getElementById('m-name').value.trim();
+  const lastDate = document.getElementById('m-last-date').value;
+  const lastKm = document.getElementById('m-last-km').value;
+  const cadence = Number(document.getElementById('m-cadence').value);
+  const unit = document.getElementById('m-unit').value;
+  if (!name || !cadence) { alert('Nombre y cadencia son obligatorios.'); return; }
+  const item = { id: Date.now(), name, cadence, unit };
+  if (unit === 'km') {
+    if (!lastKm) { alert('Indica los km de la última vez.'); return; }
+    item.lastKm = Number(lastKm);
+  } else {
+    item.lastDate = lastDate || new Date().toISOString().slice(0, 10);
+  }
+  state.maintenance.push(item);
+  saveState();
+  // Clear
+  ['m-name','m-last-date','m-last-km','m-cadence'].forEach(id => document.getElementById(id).value = '');
+  modalMaint.classList.remove('open');
+  renderAll();
+});
+modalMaint.addEventListener('click', (e) => {
+  if (e.target === modalMaint) modalMaint.classList.remove('open');
+});
+
+// Export / Import
+document.getElementById('export-json').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `life_copilot_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('export-md').addEventListener('click', () => {
+  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
+  let md = `# Events — Vencimientos y recordatorios\n\nÚltima actualización: ${new Date().toISOString().slice(0,10)}\n\n## Próximos vencimientos\n\n`;
+  sorted.forEach(ev => {
+    const amt = ev.amount ? ` — ${fmtCurrency(ev.amount)}` : '';
+    md += `- **${ev.date}** — ${ev.category} — ${ev.title}${amt}\n`;
+  });
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'events.md';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('import-json').addEventListener('click', () => document.getElementById('import-file').click());
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      state = JSON.parse(ev.target.result);
+      saveState(); renderAll();
+      alert('Importado correctamente.');
+    } catch (err) { alert('Error al importar: ' + err.message); }
+  };
+  reader.readAsText(file);
+});
+
+// Boot
+renderAll();
+</script>
+</body>
+</html>
